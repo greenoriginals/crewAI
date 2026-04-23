@@ -1,0 +1,105 @@
+---
+title: Kerq
+description: Kerq helps CrewAI agents verify tool trustworthiness before execution using trust scoring.
+---
+
+## Overview
+
+Kerq is a trust verification tool that helps CrewAI agents avoid unreliable tools by checking trust scores before execution. Instead of blindly calling external APIs and MCP tools, agents can perform a preflight trust check using Kerq's scoring system to determine whether a tool is safe to execute.
+
+**Why this matters**: Agent failures often stem from calling broken, deprecated, or untrusted external tools. Kerq lets agents make intelligent decisions—proceed with trusted tools or reject unreliable ones—preventing wasted LLM calls and failed workflows.
+
+- **27ms average response time** for trust scoring
+- **200+ tools scored** and continuously updated  
+- **Protocol-agnostic** — Works with any tool behind MCP servers or API wrappers
+- **pip install ready** — Published on PyPI (v0.1.0+)
+
+## Installation
+
+Install crewai-kerq via pip:
+
+```bash
+pip install crewai-kerq
+
+Setup
+Get your Kerq API key at kerq.dev. Sign up for free to access the trust scoring API.
+Set your API key as an environment variable:
+export KERQ_API_KEY="your-api-key-here"
+
+Or pass it directly when initializing tools:
+from kerq import KerqScoreTool
+
+tool = KerqScoreTool(api_key="your-api-key-here")
+
+Usage Example
+This example shows a realistic CrewAI agent workflow where the agent uses Kerq to verify tool trustworthiness before execution:
+from crewai import Agent, Task, Crew
+from kerq import KerqScoreTool
+
+# Initialize the Kerq trust verification tool
+trust_checker = KerqScoreTool()
+
+# Create an agent that verifies tool trust before executing
+researcher = Agent(
+    role="Research Analyst",
+    goal="Research topics while ensuring tool reliability",
+    backstory="An analyst who only uses trusted, verified tools to ensure data quality.",
+    tools=[trust_checker],  # Agent has access to trust verification
+    verbose=True
+)
+
+# Define a research task
+research_task = Task(
+    description="""
+    Research the latest trends in AI agents. Before calling any external API:
+    1. Use KerqScoreTool to check the tool's trust score
+    2. If trust_score >= 0.8, proceed with the external API call
+    3. If trust_score < 0.8, recommend an alternative tool
+    4. Report findings with confidence assessment
+    """,
+    expected_output="Detailed research findings with tool reliability notes",
+    agent=researcher
+)
+
+# Execute the crew
+crew = Crew(
+    agents=[researcher],
+    tasks=[research_task],
+    verbose=True
+)
+
+crew.kickoff(inputs={"topic": "AI agent frameworks"})
+
+Configuration
+Trust Score Threshold
+Set your confidence threshold when scoring tools:
+from kerq import KerqScoreTool
+
+tool = KerqScoreTool()
+
+# Check trust score for a specific tool
+score_response = tool.score_tool(
+    tool_name="web_search_api",
+    threshold=0.75  # Only proceed if score >= 0.75
+)
+
+if score_response["trust_score"] >= 0.75:
+    # Proceed with tool execution
+    pass
+else:
+    # Reject or use alternative tool
+    pass
+
+Environment Variables
+Variable
+Description
+KERQ_API_KEY
+Your Kerq API authentication key
+KERQ_BASE_URL
+(Optional) Custom Kerq API endpoint
+
+Links
+Documentation: kerq.dev
+PyPI: crewai-kerq
+GitHub: github.com/greenoriginals/crewai-kerq
+API Status: Check 200+ scored tools
